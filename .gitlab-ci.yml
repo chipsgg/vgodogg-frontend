@@ -1,0 +1,81 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: overlay
+
+before_script:
+  # Install CA certs, openssl to https downloads, python for gcloud sdk
+  - apk add --update make ca-certificates openssl python
+  - update-ca-certificates
+  # Write our GCP service account private key into a file
+  - echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+  # Download and install Google Cloud SDK
+  - wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz
+  - tar zxvf google-cloud-sdk.tar.gz && ./google-cloud-sdk/install.sh --usage-reporting=false --path-update=true
+  - google-cloud-sdk/bin/gcloud --quiet components update
+  - google-cloud-sdk/bin/gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+  - docker login -u _json_key --password-stdin https://gcr.io < ${HOME}/gcloud-service-key.json
+
+stages:
+  - publish
+
+publish-image:
+  stage: publish
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE .
+    - docker tag $CI_REGISTRY_IMAGE "gcr.io/$GCLOUD_PROJECT_ID/$CI_REGISTRY_IMAGE
+    - docker push "gcr.io/$GCLOUD_PROJECT_ID/$CI_REGISTRY_IMAGE:latest"
+  only:
+    - master
+
+# build:
+#   stage: build
+#   image: docker:latest
+#   services:
+#     - docker:dind
+#   before_script:
+#     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#   script:
+#     - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
+#     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+#   except:
+#     - master
+# deploy-keytrade:
+#   stage: deploy
+#   image: ubuntu:latest
+#   before_script:
+#     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+#     - mkdir -p ~/.ssh
+#     - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+#     - chmod 600 ~/.ssh/id_rsa
+#     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+#   script:
+#     - ssh root@$STAGING_SERVER_IP "docker pull repo.tacyarg.com:8443/vunbox/vunbox-backend:keytrade"
+#     - ssh root@$STAGING_SERVER_IP "docker stop flipaskin-backend && docker rm flipaskin-backend"
+#     - ssh root@$STAGING_SERVER_IP "docker run --name flipaskin-backend --env-file=.env-flipaskin -p 5000:3000 -p 5001:3001 -d repo.tacyarg.com:8443/vunbox/vunbox-backend:keytrade npm start"
+#   environment:
+#     name: staging
+#   only:
+#     - keytrade
+
+# deploy-master:
+#   stage: deploy
+#   image: ubuntu:latest
+#   before_script:
+#     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+#     - mkdir -p ~/.ssh
+#     - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+#     - chmod 600 ~/.ssh/id_rsa
+#     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+#   script:
+#     - ssh root@$STAGING_SERVER_IP "docker pull repo.tacyarg.com:8443/vunbox/vunbox-backend"
+#     - ssh root@$STAGING_SERVER_IP "docker stop vunbox-backend && docker rm vunbox-backend"
+#     - ssh root@$STAGING_SERVER_IP "docker run --name vunbox-backend --env-file=.env -p 3000:3000 -p 3001:3001 -d repo.tacyarg.com:8443/vunbox/vunbox-backend:latest npm start"
+#   environment:
+#     name: staging
+#   only:
+#     - master
+#   # when: manual

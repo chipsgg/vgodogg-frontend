@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: vgodogg-frontend-svc
+spec:
+  selector:
+    name: vgodogg-frontend
+  type: LoadBalancer
+  ports:
+  - name: web
+    protocol: TCP
+    port: 80

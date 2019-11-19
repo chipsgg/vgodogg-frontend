@@ -1,0 +1,11 @@
+apiVersion: 'v1'
+kind: Pod
+metadata:
+  name: vgodogg-frontend
+  labels:
+    name: vgodogg-frontend
+spec:
+  containers:
+    - name: vgodogg-frontend
+      image: gcr.io/chipsgg-184323/vgodogg-frontend
+      imagePullPolicy: Always
