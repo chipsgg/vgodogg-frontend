@@ -1,6 +1,6 @@
 # vgodogg-vue
 
-[vgodogg_vidoe](https://imgur.com/eecXf06.mp4)
+![vgodogg_vidoe](https://imgur.com/eecXf06.mp4)
 
 ## Project setup
 ```
