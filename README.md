@@ -1,6 +1,6 @@
 # vgodogg-vue
 
-![vgodogg_vidoe](https://imgur.com/eecXf06.mp4)
+![vgodogg_vidoe](https://pbs.twimg.com/media/D8S1-pjXsAIY0-w.jpg)
 
 ## Project setup
 ```
